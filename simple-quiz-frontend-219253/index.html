@@ -12,6 +12,8 @@
                 --text: #e7edf7;
                 --muted: #a9b6cc;
                 --accent: #6ea8fe;
+                --danger: #ff6b6b;
+                --success: #41d19a;
             }
 
             @media (prefers-color-scheme: light) {
@@ -21,6 +23,8 @@
                     --text: #0b1220;
                     --muted: #4b5a73;
                     --accent: #2563eb;
+                    --danger: #dc2626;
+                    --success: #059669;
                 }
             }
 
@@ -63,15 +67,6 @@
                 font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New",
                     monospace;
                 font-size: 0.95em;
-            }
-
-            a {
-                color: var(--accent);
-                text-decoration: none;
-            }
-
-            a:hover {
-                text-decoration: underline;
             }
 
             .hint {
@@ -146,143 +141,350 @@
                 display: block;
                 width: 100%;
             }
+
+            .actions {
+                display: flex;
+                gap: 10px;
+                align-items: center;
+                margin-top: 14px;
+            }
+
+            button {
+                appearance: none;
+                border: 1px solid rgba(127, 140, 170, 0.35);
+                background: rgba(110, 168, 254, 0.18);
+                color: var(--text);
+                padding: 10px 14px;
+                border-radius: 12px;
+                font-weight: 600;
+                cursor: pointer;
+            }
+
+            button:hover {
+                border-color: rgba(110, 168, 254, 0.65);
+            }
+
+            button:disabled {
+                cursor: not-allowed;
+                opacity: 0.6;
+            }
+
+            .results {
+                margin-top: 16px;
+                padding: 12px;
+                border-radius: 12px;
+                border: 1px solid rgba(127, 140, 170, 0.25);
+                background: rgba(127, 140, 170, 0.08);
+            }
+
+            .results h3 {
+                margin: 0 0 8px 0;
+                font-size: 1rem;
+            }
+
+            .result-line {
+                margin: 6px 0;
+                color: var(--muted);
+            }
+
+            .result-line strong {
+                color: var(--text);
+            }
+
+            .status {
+                margin-left: auto;
+                font-size: 0.9rem;
+                color: var(--muted);
+            }
+
+            .status.error {
+                color: var(--danger);
+            }
+
+            .status.success {
+                color: var(--success);
+            }
+
+            .sr-only {
+                position: absolute;
+                width: 1px;
+                height: 1px;
+                padding: 0;
+                margin: -1px;
+                overflow: hidden;
+                clip: rect(0, 0, 0, 0);
+                white-space: nowrap;
+                border: 0;
+            }
         </style>
     </head>
     <body>
         <main>
-            <section class="card" aria-label="Simple quiz frontend placeholder">
+            <section class="card" aria-label="Simple quiz frontend">
                 <h1>Simple Quiz Frontend</h1>
                 <p>
-                    Preview is running successfully. Below is a minimal static set of quiz questions so the UI renders
-                    real content.
+                    Answer the questions below and click <strong>Submit</strong> to see your score. This page is
+                    intentionally minimal and self-contained (no frameworks).
                 </p>
 
                 <section class="quiz" aria-label="Quiz questions">
                     <h2>Quiz Questions (Sample)</h2>
 
-                    <article class="question" aria-label="Question 1">
-                        <p class="meta">Question 1 of 5 • Multiple choice</p>
-                        <h3>Which HTML element is best for the main page content (excluding headers/footers/nav)?</h3>
-                        <ul class="options">
-                            <li class="option">
-                                <input type="radio" id="q1a" name="q1" />
-                                <label for="q1a">&lt;section&gt;</label>
-                            </li>
-                            <li class="option">
-                                <input type="radio" id="q1b" name="q1" />
-                                <label for="q1b">&lt;main&gt;</label>
-                            </li>
-                            <li class="option">
-                                <input type="radio" id="q1c" name="q1" />
-                                <label for="q1c">&lt;div&gt;</label>
-                            </li>
-                            <li class="option">
-                                <input type="radio" id="q1d" name="q1" />
-                                <label for="q1d">&lt;aside&gt;</label>
-                            </li>
-                        </ul>
-                    </article>
+                    <!-- The quiz is rendered here by JavaScript -->
+                    <form id="quizForm" novalidate>
+                        <div id="quizRoot"></div>
 
-                    <article class="question" aria-label="Question 2">
-                        <p class="meta">Question 2 of 5 • Multiple choice</p>
-                        <h3>In CSS, which unit is relative to the root element’s font size?</h3>
-                        <ul class="options">
-                            <li class="option">
-                                <input type="radio" id="q2a" name="q2" />
-                                <label for="q2a">em</label>
-                            </li>
-                            <li class="option">
-                                <input type="radio" id="q2b" name="q2" />
-                                <label for="q2b">rem</label>
-                            </li>
-                            <li class="option">
-                                <input type="radio" id="q2c" name="q2" />
-                                <label for="q2c">px</label>
-                            </li>
-                            <li class="option">
-                                <input type="radio" id="q2d" name="q2" />
-                                <label for="q2d">vh</label>
-                            </li>
-                        </ul>
-                    </article>
+                        <div class="actions">
+                            <button id="submitBtn" type="submit">Submit</button>
+                            <button id="resetBtn" type="button">Reset</button>
+                            <div id="status" class="status" role="status" aria-live="polite"></div>
+                        </div>
 
-                    <article class="question" aria-label="Question 3">
-                        <p class="meta">Question 3 of 5 • Multiple choice</p>
-                        <h3>Which JavaScript method converts a JSON string into an object?</h3>
-                        <ul class="options">
-                            <li class="option">
-                                <input type="radio" id="q3a" name="q3" />
-                                <label for="q3a">JSON.stringify()</label>
-                            </li>
-                            <li class="option">
-                                <input type="radio" id="q3b" name="q3" />
-                                <label for="q3b">JSON.parse()</label>
-                            </li>
-                            <li class="option">
-                                <input type="radio" id="q3c" name="q3" />
-                                <label for="q3c">Object.fromEntries()</label>
-                            </li>
-                            <li class="option">
-                                <input type="radio" id="q3d" name="q3" />
-                                <label for="q3d">String.toObject()</label>
-                            </li>
-                        </ul>
-                    </article>
-
-                    <article class="question" aria-label="Question 4">
-                        <p class="meta">Question 4 of 5 • Multiple choice</p>
-                        <h3>Which HTTP method is typically used to update an existing resource?</h3>
-                        <ul class="options">
-                            <li class="option">
-                                <input type="radio" id="q4a" name="q4" />
-                                <label for="q4a">GET</label>
-                            </li>
-                            <li class="option">
-                                <input type="radio" id="q4b" name="q4" />
-                                <label for="q4b">POST</label>
-                            </li>
-                            <li class="option">
-                                <input type="radio" id="q4c" name="q4" />
-                                <label for="q4c">PUT</label>
-                            </li>
-                            <li class="option">
-                                <input type="radio" id="q4d" name="q4" />
-                                <label for="q4d">TRACE</label>
-                            </li>
-                        </ul>
-                    </article>
-
-                    <article class="question" aria-label="Question 5">
-                        <p class="meta">Question 5 of 5 • Multiple choice</p>
-                        <h3>Which of these improves accessibility for form controls?</h3>
-                        <ul class="options">
-                            <li class="option">
-                                <input type="radio" id="q5a" name="q5" />
-                                <label for="q5a">Using placeholder text instead of labels</label>
-                            </li>
-                            <li class="option">
-                                <input type="radio" id="q5b" name="q5" />
-                                <label for="q5b">Associating a &lt;label&gt; with an input via <code>for</code>/<code>id</code></label>
-                            </li>
-                            <li class="option">
-                                <input type="radio" id="q5c" name="q5" />
-                                <label for="q5c">Removing focus outlines</label>
-                            </li>
-                            <li class="option">
-                                <input type="radio" id="q5d" name="q5" />
-                                <label for="q5d">Relying only on color to show selection</label>
-                            </li>
-                        </ul>
-                    </article>
+                        <div id="results" class="results" hidden aria-label="Quiz results"></div>
+                    </form>
                 </section>
 
                 <div class="hint">
                     <p>
-                        <strong>Note:</strong> This is intentionally static content (no scoring / submit logic yet) to
-                        satisfy the “preview shows quiz questions” requirement with minimal extra features.
+                        <strong>Tip:</strong> You can change answers before submitting. After submission, the page will
+                        show your score and which questions you missed.
                     </p>
                 </div>
             </section>
         </main>
+
+        <script>
+            // Minimal, self-contained quiz logic (no dependencies / frameworks).
+            (function () {
+                'use strict';
+
+                const quiz = [
+                    {
+                        id: 'q1',
+                        prompt:
+                            'Which HTML element is best for the main page content (excluding headers/footers/nav)?',
+                        options: [
+                            { id: 'a', label: '<section>' },
+                            { id: 'b', label: '<main>' },
+                            { id: 'c', label: '<div>' },
+                            { id: 'd', label: '<aside>' }
+                        ],
+                        correctOptionId: 'b'
+                    },
+                    {
+                        id: 'q2',
+                        prompt: "In CSS, which unit is relative to the root element’s font size?",
+                        options: [
+                            { id: 'a', label: 'em' },
+                            { id: 'b', label: 'rem' },
+                            { id: 'c', label: 'px' },
+                            { id: 'd', label: 'vh' }
+                        ],
+                        correctOptionId: 'b'
+                    },
+                    {
+                        id: 'q3',
+                        prompt: 'Which JavaScript method converts a JSON string into an object?',
+                        options: [
+                            { id: 'a', label: 'JSON.stringify()' },
+                            { id: 'b', label: 'JSON.parse()' },
+                            { id: 'c', label: 'Object.fromEntries()' },
+                            { id: 'd', label: 'String.toObject()' }
+                        ],
+                        correctOptionId: 'b'
+                    },
+                    {
+                        id: 'q4',
+                        prompt: 'Which HTTP method is typically used to update an existing resource?',
+                        options: [
+                            { id: 'a', label: 'GET' },
+                            { id: 'b', label: 'POST' },
+                            { id: 'c', label: 'PUT' },
+                            { id: 'd', label: 'TRACE' }
+                        ],
+                        correctOptionId: 'c'
+                    },
+                    {
+                        id: 'q5',
+                        prompt: 'Which of these improves accessibility for form controls?',
+                        options: [
+                            { id: 'a', label: 'Using placeholder text instead of labels' },
+                            {
+                                id: 'b',
+                                label:
+                                    'Associating a <label> with an input via for/id'
+                            },
+                            { id: 'c', label: 'Removing focus outlines' },
+                            { id: 'd', label: 'Relying only on color to show selection' }
+                        ],
+                        correctOptionId: 'b'
+                    }
+                ];
+
+                const quizRoot = document.getElementById('quizRoot');
+                const quizForm = document.getElementById('quizForm');
+                const submitBtn = document.getElementById('submitBtn');
+                const resetBtn = document.getElementById('resetBtn');
+                const resultsEl = document.getElementById('results');
+                const statusEl = document.getElementById('status');
+
+                function setStatus(message, kind) {
+                    statusEl.textContent = message || '';
+                    statusEl.classList.remove('error', 'success');
+                    if (kind) statusEl.classList.add(kind);
+                }
+
+                function escapeHtml(text) {
+                    const div = document.createElement('div');
+                    div.textContent = text;
+                    return div.innerHTML;
+                }
+
+                function renderQuiz() {
+                    quizRoot.innerHTML = '';
+
+                    quiz.forEach((q, index) => {
+                        const questionEl = document.createElement('article');
+                        questionEl.className = 'question';
+                        questionEl.setAttribute('aria-label', `Question ${index + 1}`);
+
+                        const meta = document.createElement('p');
+                        meta.className = 'meta';
+                        meta.textContent = `Question ${index + 1} of ${quiz.length} • Multiple choice`;
+
+                        const h3 = document.createElement('h3');
+                        h3.textContent = q.prompt;
+
+                        const ul = document.createElement('ul');
+                        ul.className = 'options';
+
+                        q.options.forEach((opt) => {
+                            const li = document.createElement('li');
+                            li.className = 'option';
+
+                            const input = document.createElement('input');
+                            input.type = 'radio';
+                            input.name = q.id;
+                            input.id = `${q.id}_${opt.id}`;
+                            input.value = opt.id;
+
+                            const label = document.createElement('label');
+                            label.setAttribute('for', input.id);
+
+                            // Some labels include markup-like strings; render as text.
+                            label.innerHTML = escapeHtml(opt.label);
+
+                            li.appendChild(input);
+                            li.appendChild(label);
+                            ul.appendChild(li);
+                        });
+
+                        questionEl.appendChild(meta);
+                        questionEl.appendChild(h3);
+                        questionEl.appendChild(ul);
+                        quizRoot.appendChild(questionEl);
+                    });
+                }
+
+                function getSelectedAnswers() {
+                    const answers = new Map();
+                    quiz.forEach((q) => {
+                        const selected = quizForm.querySelector(`input[name="${q.id}"]:checked`);
+                        answers.set(q.id, selected ? selected.value : null);
+                    });
+                    return answers;
+                }
+
+                function computeScore(answers) {
+                    let score = 0;
+                    const misses = [];
+
+                    quiz.forEach((q, index) => {
+                        const selected = answers.get(q.id);
+                        const correct = q.correctOptionId;
+                        if (selected === correct) {
+                            score += 1;
+                        } else {
+                            const correctLabel = q.options.find((o) => o.id === correct)?.label ?? 'Unknown';
+                            misses.push({
+                                number: index + 1,
+                                selected,
+                                correct,
+                                correctLabel
+                            });
+                        }
+                    });
+
+                    return { score, total: quiz.length, misses };
+                }
+
+                function renderResults({ score, total, misses }) {
+                    resultsEl.hidden = false;
+
+                    const percent = Math.round((score / total) * 100);
+                    const headline = `<h3>Results</h3>
+                        <p class="result-line"><strong>Score:</strong> ${score} / ${total} (${percent}%)</p>`;
+
+                    let details = '';
+                    if (misses.length === 0) {
+                        details = `<p class="result-line"><strong>Perfect!</strong> You got everything correct.</p>`;
+                    } else {
+                        const missedList = misses
+                            .map((m) => {
+                                const chosen = m.selected ? `'${m.selected.toUpperCase()}'` : 'No answer';
+                                return `<li>Question ${m.number}: ${chosen}. Correct: <strong>${escapeHtml(
+                                    m.correctLabel
+                                )}</strong></li>`;
+                            })
+                            .join('');
+                        details = `<p class="result-line">Review missed questions:</p><ul>${missedList}</ul>`;
+                    }
+
+                    resultsEl.innerHTML = headline + details;
+                }
+
+                function validateAllAnswered(answers) {
+                    for (const q of quiz) {
+                        if (!answers.get(q.id)) return false;
+                    }
+                    return true;
+                }
+
+                // Initial render
+                renderQuiz();
+                setStatus('', null);
+
+                quizForm.addEventListener('submit', function (e) {
+                    e.preventDefault();
+
+                    const answers = getSelectedAnswers();
+
+                    if (!validateAllAnswered(answers)) {
+                        setStatus('Please answer all questions before submitting.', 'error');
+                        resultsEl.hidden = true;
+                        resultsEl.innerHTML = '';
+                        return;
+                    }
+
+                    const result = computeScore(answers);
+                    renderResults(result);
+                    setStatus('Submitted! Scroll to see your results.', 'success');
+                });
+
+                resetBtn.addEventListener('click', function () {
+                    quizForm.reset();
+                    resultsEl.hidden = true;
+                    resultsEl.innerHTML = '';
+                    setStatus('Reset complete.', null);
+                });
+
+                // If the user changes an answer after an error, clear the error message.
+                quizForm.addEventListener('change', function () {
+                    if (statusEl.classList.contains('error')) {
+                        setStatus('', null);
+                    }
+                });
+            })();
+        </script>
     </body>
 </html>
