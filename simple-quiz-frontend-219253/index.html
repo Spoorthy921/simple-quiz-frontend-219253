@@ -192,6 +192,25 @@
                 color: var(--text);
             }
 
+            .progress {
+                font-size: 0.9rem;
+                color: var(--muted);
+                border: 1px solid rgba(127, 140, 170, 0.25);
+                background: rgba(127, 140, 170, 0.08);
+                padding: 6px 10px;
+                border-radius: 999px;
+                display: inline-flex;
+                align-items: center;
+                gap: 6px;
+                white-space: nowrap;
+            }
+
+            .progress strong {
+                color: var(--text);
+                font-variant-numeric: tabular-nums;
+                letter-spacing: 0.02em;
+            }
+
             .status {
                 margin-left: auto;
                 font-size: 0.9rem;
@@ -310,6 +329,12 @@
                             <button id="submitBtn" type="submit">Submit</button>
                             <button id="resetBtn" type="button">Reset</button>
 
+                            <div id="progress" class="progress" aria-label="Quiz progress">
+                                <span class="sr-only">Answered questions:</span>
+                                <strong id="progressValue">0/0</strong>
+                                <span aria-hidden="true">answered</span>
+                            </div>
+
                             <div id="timer" class="timer" aria-label="Quiz timer">
                                 <span class="sr-only">Elapsed time:</span>
                                 <span aria-hidden="true">Time</span>
@@ -407,6 +432,9 @@
                 const resultsEl = document.getElementById('results');
                 const statusEl = document.getElementById('status');
 
+                // Progress UI
+                const progressValueEl = document.getElementById('progressValue');
+
                 // Timer UI
                 const timerEl = document.getElementById('timer');
                 const timerValueEl = document.getElementById('timerValue');
@@ -490,6 +518,22 @@
                     statusEl.textContent = message || '';
                     statusEl.classList.remove('error', 'success');
                     if (kind) statusEl.classList.add(kind);
+                }
+
+                function countAnswered(answers) {
+                    let answered = 0;
+                    quiz.forEach((q) => {
+                        if (answers.get(q.id)) answered += 1;
+                    });
+                    return answered;
+                }
+
+                function updateProgressUi(answers) {
+                    if (!progressValueEl) return;
+
+                    const total = quiz.length;
+                    const answered = answers ? countAnswered(answers) : countAnswered(getSelectedAnswers());
+                    progressValueEl.textContent = `${answered}/${total}`;
                 }
 
                 function escapeHtml(text) {
@@ -722,12 +766,16 @@
                         ensureQuizOrder();
                         renderQuiz();
                     }
+
+                    // Reset selections implies progress becomes 0/total.
+                    updateProgressUi();
                 }
 
                 // Initial render (randomized per page load).
                 ensureQuizOrder();
                 renderQuiz();
                 resetQuizUi();
+                updateProgressUi();
 
                 // Start timer once the quiz is rendered (and UI is ready).
                 resetAndStartTimer();
@@ -736,6 +784,7 @@
                     e.preventDefault();
 
                     const answers = getSelectedAnswers();
+                    updateProgressUi(answers);
                     const validation = validateAllAnswered(answers);
 
                     if (!validation.isValid) {
@@ -796,6 +845,8 @@
 
                 // If the user changes an answer after an error, clear the error message and any highlighting.
                 quizForm.addEventListener('change', function () {
+                    updateProgressUi();
+
                     if (statusEl.classList.contains('error')) {
                         setStatus('', null);
                     }
