@@ -226,6 +226,43 @@
             .question.unanswered .meta {
                 color: var(--danger);
             }
+
+            /* Post-submit answer reveal styling (kept minimal). */
+            .question.graded .option {
+                transition:
+                    border-color 140ms ease,
+                    background-color 140ms ease;
+            }
+
+            .question.graded .option.is-correct {
+                border-color: rgba(65, 209, 154, 0.85);
+                background: rgba(65, 209, 154, 0.12);
+            }
+
+            .question.graded .option.is-wrong {
+                border-color: rgba(255, 107, 107, 0.85);
+                background: rgba(255, 107, 107, 0.10);
+            }
+
+            .question.graded .meta .grade-pill {
+                display: inline-block;
+                margin-left: 8px;
+                padding: 2px 8px;
+                border-radius: 999px;
+                font-size: 0.85em;
+                border: 1px solid rgba(127, 140, 170, 0.35);
+                color: var(--text);
+            }
+
+            .question.graded.is-correct .meta .grade-pill {
+                border-color: rgba(65, 209, 154, 0.65);
+                color: var(--success);
+            }
+
+            .question.graded.is-wrong .meta .grade-pill {
+                border-color: rgba(255, 107, 107, 0.65);
+                color: var(--danger);
+            }
         </style>
     </head>
     <body>
@@ -478,6 +515,61 @@
                     };
                 }
 
+                function clearGrading() {
+                    quizRoot.querySelectorAll('.question.graded').forEach((questionEl) => {
+                        questionEl.classList.remove('graded', 'is-correct', 'is-wrong');
+
+                        const pill = questionEl.querySelector('.grade-pill');
+                        if (pill) pill.remove();
+
+                        questionEl.querySelectorAll('.option').forEach((optEl) => {
+                            optEl.classList.remove('is-correct', 'is-wrong');
+                        });
+                    });
+                }
+
+                function applyGrading(answers) {
+                    quiz.forEach((q) => {
+                        const questionEl = quizRoot.querySelector(`.question[data-question-id="${q.id}"]`);
+                        if (!questionEl) return;
+
+                        questionEl.classList.add('graded');
+
+                        const selected = answers.get(q.id);
+                        const isCorrect = selected === q.correctOptionId;
+
+                        questionEl.classList.toggle('is-correct', isCorrect);
+                        questionEl.classList.toggle('is-wrong', !isCorrect);
+
+                        // Add/replace a small "Correct/Incorrect" indicator in the meta line.
+                        const meta = questionEl.querySelector('.meta');
+                        if (meta) {
+                            const existing = meta.querySelector('.grade-pill');
+                            if (existing) existing.remove();
+
+                            const pill = document.createElement('span');
+                            pill.className = 'grade-pill';
+                            pill.textContent = isCorrect ? 'Correct' : 'Incorrect';
+                            meta.appendChild(pill);
+                        }
+
+                        // Mark the correct option, and mark the chosen wrong option (if any).
+                        q.options.forEach((opt) => {
+                            const optionEl = quizRoot.querySelector(
+                                `.question[data-question-id="${q.id}"] #${q.id}_${opt.id}`
+                            )?.closest('.option');
+
+                            if (!optionEl) return;
+
+                            if (opt.id === q.correctOptionId) {
+                                optionEl.classList.add('is-correct');
+                            } else if (selected && opt.id === selected && selected !== q.correctOptionId) {
+                                optionEl.classList.add('is-wrong');
+                            }
+                        });
+                    });
+                }
+
                 // Reset the UI back to its initial state.
                 function resetQuizUi() {
                     quizForm.reset();
@@ -485,6 +577,7 @@
                     resultsEl.innerHTML = '';
                     setStatus('', null);
                     clearUnansweredHighlights();
+                    clearGrading();
                 }
 
                 // Initial render
@@ -499,6 +592,7 @@
 
                     if (!validation.isValid) {
                         clearUnansweredHighlights();
+                        clearGrading();
                         highlightUnansweredQuestions(validation.unansweredQuestionIds);
 
                         const questionNumbers = validation.unansweredQuestionIds
@@ -535,6 +629,7 @@
 
                     const result = computeScore(answers);
                     renderResults(result);
+                    applyGrading(answers);
                     setStatus('Submitted! Scroll to see your results.', 'success');
                     clearUnansweredHighlights();
                 });
@@ -550,6 +645,15 @@
                         setStatus('', null);
                     }
                     clearUnansweredHighlights();
+
+                    // Keep behavior minimal/consistent: if user edits after a successful submit,
+                    // remove previous grading so they can resubmit for updated grading/results.
+                    if (statusEl.classList.contains('success')) {
+                        setStatus('', null);
+                    }
+                    clearGrading();
+                    resultsEl.hidden = true;
+                    resultsEl.innerHTML = '';
                 });
             })();
         </script>
