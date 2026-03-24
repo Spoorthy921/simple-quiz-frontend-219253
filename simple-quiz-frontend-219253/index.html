@@ -147,6 +147,7 @@
                 gap: 10px;
                 align-items: center;
                 margin-top: 14px;
+                flex-wrap: wrap;
             }
 
             button {
@@ -205,6 +206,30 @@
                 color: var(--success);
             }
 
+            .timer {
+                margin-left: auto;
+                font-size: 0.9rem;
+                color: var(--muted);
+                border: 1px solid rgba(127, 140, 170, 0.25);
+                background: rgba(127, 140, 170, 0.08);
+                padding: 6px 10px;
+                border-radius: 999px;
+                display: inline-flex;
+                align-items: center;
+                gap: 6px;
+                white-space: nowrap;
+            }
+
+            .timer strong {
+                color: var(--text);
+                font-variant-numeric: tabular-nums;
+                letter-spacing: 0.02em;
+            }
+
+            .timer.stopped {
+                border-color: rgba(110, 168, 254, 0.35);
+            }
+
             .sr-only {
                 position: absolute;
                 width: 1px;
@@ -241,7 +266,7 @@
 
             .question.graded .option.is-wrong {
                 border-color: rgba(255, 107, 107, 0.85);
-                background: rgba(255, 107, 107, 0.10);
+                background: rgba(255, 107, 107, 0.1);
             }
 
             .question.graded .meta .grade-pill {
@@ -284,6 +309,13 @@
                         <div class="actions">
                             <button id="submitBtn" type="submit">Submit</button>
                             <button id="resetBtn" type="button">Reset</button>
+
+                            <div id="timer" class="timer" aria-label="Quiz timer">
+                                <span class="sr-only">Elapsed time:</span>
+                                <span aria-hidden="true">Time</span>
+                                <strong id="timerValue">00:00</strong>
+                            </div>
+
                             <div id="status" class="status" role="status" aria-live="polite"></div>
                         </div>
 
@@ -375,9 +407,84 @@
                 const resultsEl = document.getElementById('results');
                 const statusEl = document.getElementById('status');
 
+                // Timer UI
+                const timerEl = document.getElementById('timer');
+                const timerValueEl = document.getElementById('timerValue');
+
                 // Current on-screen question order (shuffled per page load and on reset).
                 // Each entry is a "view model" with shuffled options while still tracking the correct option.
                 let quizOrder = [];
+
+                // ---- Timer state (minimal + self-contained) ----
+                // We keep this independent from quiz validation/scoring/highlighting.
+                let timerIntervalId = null;
+                let timerStartMs = null;
+                let timerElapsedBeforePauseMs = 0;
+
+                function pad2(n) {
+                    return String(n).padStart(2, '0');
+                }
+
+                function formatElapsed(ms) {
+                    const totalSeconds = Math.floor(ms / 1000);
+                    const minutes = Math.floor(totalSeconds / 60);
+                    const seconds = totalSeconds % 60;
+                    return `${pad2(minutes)}:${pad2(seconds)}`;
+                }
+
+                function updateTimerUi() {
+                    if (!timerValueEl) return;
+                    timerValueEl.textContent = formatElapsed(getTimerElapsedMs());
+                }
+
+                function getTimerElapsedMs() {
+                    if (timerStartMs === null) return timerElapsedBeforePauseMs;
+                    return timerElapsedBeforePauseMs + (Date.now() - timerStartMs);
+                }
+
+                function startTimer() {
+                    // Avoid multiple intervals if called more than once.
+                    if (timerIntervalId !== null) return;
+
+                    if (timerStartMs === null) {
+                        timerStartMs = Date.now();
+                    }
+
+                    if (timerEl) timerEl.classList.remove('stopped');
+
+                    updateTimerUi();
+                    timerIntervalId = window.setInterval(updateTimerUi, 250);
+                }
+
+                function stopTimer() {
+                    if (timerIntervalId !== null) {
+                        window.clearInterval(timerIntervalId);
+                        timerIntervalId = null;
+                    }
+
+                    if (timerStartMs !== null) {
+                        timerElapsedBeforePauseMs += Date.now() - timerStartMs;
+                        timerStartMs = null;
+                    }
+
+                    updateTimerUi();
+                    if (timerEl) timerEl.classList.add('stopped');
+                }
+
+                function resetAndStartTimer() {
+                    if (timerIntervalId !== null) {
+                        window.clearInterval(timerIntervalId);
+                        timerIntervalId = null;
+                    }
+                    timerStartMs = Date.now();
+                    timerElapsedBeforePauseMs = 0;
+
+                    if (timerEl) timerEl.classList.remove('stopped');
+
+                    updateTimerUi();
+                    timerIntervalId = window.setInterval(updateTimerUi, 250);
+                }
+                // ---- End Timer state ----
 
                 function setStatus(message, kind) {
                     statusEl.textContent = message || '';
@@ -622,6 +729,9 @@
                 renderQuiz();
                 resetQuizUi();
 
+                // Start timer once the quiz is rendered (and UI is ready).
+                resetAndStartTimer();
+
                 quizForm.addEventListener('submit', function (e) {
                     e.preventDefault();
 
@@ -666,16 +776,22 @@
                         return;
                     }
 
+                    // Stop the timer when the quiz is submitted successfully.
+                    stopTimer();
+
                     const result = computeScore(answers);
                     renderResults(result);
                     applyGrading(answers);
-                    setStatus('Submitted! Scroll to see your results.', 'success');
+
+                    const elapsed = formatElapsed(getTimerElapsedMs());
+                    setStatus(`Submitted! Time: ${elapsed}. Scroll to see your results.`, 'success');
                     clearUnansweredHighlights();
                 });
 
                 // Reset button: clear selections + results + status + re-randomize question order and per-question options.
                 resetBtn.addEventListener('click', function () {
                     resetQuizUi({ rerandomize: true });
+                    resetAndStartTimer();
                 });
 
                 // If the user changes an answer after an error, clear the error message and any highlighting.
@@ -689,10 +805,19 @@
                     // remove previous grading so they can resubmit for updated grading/results.
                     if (statusEl.classList.contains('success')) {
                         setStatus('', null);
+                        // If they edit after submit, restart the timer from 0 to time the new attempt.
+                        // This avoids resuming an already-stopped timer in a confusing way.
+                        resetAndStartTimer();
                     }
+
                     clearGrading();
                     resultsEl.hidden = true;
                     resultsEl.innerHTML = '';
+                });
+
+                // Safety: stop timer if the page is being unloaded.
+                window.addEventListener('beforeunload', function () {
+                    stopTimer();
                 });
             })();
         </script>
