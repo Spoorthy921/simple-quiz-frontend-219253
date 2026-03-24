@@ -305,6 +305,7 @@
             (function () {
                 'use strict';
 
+                // Source-of-truth question data (stable order).
                 const quiz = [
                     {
                         id: 'q1',
@@ -374,6 +375,9 @@
                 const resultsEl = document.getElementById('results');
                 const statusEl = document.getElementById('status');
 
+                // Current on-screen question order (shuffled per page load and on reset).
+                let quizOrder = [];
+
                 function setStatus(message, kind) {
                     statusEl.textContent = message || '';
                     statusEl.classList.remove('error', 'success');
@@ -386,10 +390,25 @@
                     return div.innerHTML;
                 }
 
+                function shuffleCopy(items) {
+                    // Fisher–Yates shuffle on a shallow copy.
+                    const arr = items.slice();
+                    for (let i = arr.length - 1; i > 0; i -= 1) {
+                        const j = Math.floor(Math.random() * (i + 1));
+                        [arr[i], arr[j]] = [arr[j], arr[i]];
+                    }
+                    return arr;
+                }
+
+                function ensureQuizOrder() {
+                    // Keep the question set identical; only randomize order.
+                    quizOrder = shuffleCopy(quiz);
+                }
+
                 function renderQuiz() {
                     quizRoot.innerHTML = '';
 
-                    quiz.forEach((q, index) => {
+                    quizOrder.forEach((q, index) => {
                         const questionEl = document.createElement('article');
                         questionEl.className = 'question';
                         questionEl.setAttribute('aria-label', `Question ${index + 1}`);
@@ -397,7 +416,7 @@
 
                         const meta = document.createElement('p');
                         meta.className = 'meta';
-                        meta.textContent = `Question ${index + 1} of ${quiz.length} • Multiple choice`;
+                        meta.textContent = `Question ${index + 1} of ${quizOrder.length} • Multiple choice`;
 
                         const h3 = document.createElement('h3');
                         h3.textContent = q.prompt;
@@ -446,7 +465,8 @@
                     let score = 0;
                     const misses = [];
 
-                    quiz.forEach((q, index) => {
+                    // IMPORTANT: Score/misses should reflect the current on-screen order, not the source order.
+                    quizOrder.forEach((q, index) => {
                         const selected = answers.get(q.id);
                         const correct = q.correctOptionId;
                         if (selected === correct) {
@@ -462,7 +482,7 @@
                         }
                     });
 
-                    return { score, total: quiz.length, misses };
+                    return { score, total: quizOrder.length, misses };
                 }
 
                 function renderResults({ score, total, misses }) {
@@ -570,17 +590,23 @@
                     });
                 }
 
-                // Reset the UI back to its initial state.
-                function resetQuizUi() {
+                // Reset the UI back to its initial state (and optionally re-randomize question order).
+                function resetQuizUi({ rerandomize } = { rerandomize: false }) {
                     quizForm.reset();
                     resultsEl.hidden = true;
                     resultsEl.innerHTML = '';
                     setStatus('', null);
                     clearUnansweredHighlights();
                     clearGrading();
+
+                    if (rerandomize) {
+                        ensureQuizOrder();
+                        renderQuiz();
+                    }
                 }
 
-                // Initial render
+                // Initial render (randomized per page load).
+                ensureQuizOrder();
                 renderQuiz();
                 resetQuizUi();
 
@@ -595,8 +621,9 @@
                         clearGrading();
                         highlightUnansweredQuestions(validation.unansweredQuestionIds);
 
+                        // Display missing question numbers based on the current on-screen order.
                         const questionNumbers = validation.unansweredQuestionIds
-                            .map((id) => quiz.findIndex((q) => q.id === id) + 1)
+                            .map((id) => quizOrder.findIndex((q) => q.id === id) + 1)
                             .filter((n) => n > 0)
                             .join(', ');
 
@@ -634,9 +661,9 @@
                     clearUnansweredHighlights();
                 });
 
-                // Reset button: clear selections + results + status.
+                // Reset button: clear selections + results + status + re-randomize question order.
                 resetBtn.addEventListener('click', function () {
-                    resetQuizUi();
+                    resetQuizUi({ rerandomize: true });
                 });
 
                 // If the user changes an answer after an error, clear the error message and any highlighting.
