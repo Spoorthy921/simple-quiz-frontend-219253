@@ -82,19 +82,205 @@
                 border: 1px solid rgba(110, 168, 254, 0.35);
                 color: var(--text);
             }
+
+            .quiz {
+                margin-top: 18px;
+                padding-top: 18px;
+                border-top: 1px solid rgba(127, 140, 170, 0.25);
+            }
+
+            .quiz h2 {
+                font-size: 1.05rem;
+                margin: 0 0 10px 0;
+            }
+
+            .question {
+                padding: 14px;
+                border-radius: 12px;
+                border: 1px solid rgba(127, 140, 170, 0.25);
+                background: rgba(127, 140, 170, 0.08);
+                margin: 12px 0;
+            }
+
+            .question h3 {
+                margin: 0 0 10px 0;
+                font-size: 1rem;
+            }
+
+            .meta {
+                font-size: 0.9rem;
+                color: var(--muted);
+                margin: 0 0 10px 0;
+            }
+
+            .options {
+                list-style: none;
+                padding: 0;
+                margin: 0;
+                display: grid;
+                gap: 8px;
+            }
+
+            .option {
+                display: flex;
+                align-items: flex-start;
+                gap: 10px;
+                padding: 10px 12px;
+                border-radius: 10px;
+                border: 1px solid rgba(127, 140, 170, 0.25);
+                background: rgba(17, 26, 46, 0.35);
+            }
+
+            @media (prefers-color-scheme: light) {
+                .option {
+                    background: rgba(255, 255, 255, 0.85);
+                }
+            }
+
+            .option input {
+                margin-top: 2px;
+            }
+
+            .option label {
+                cursor: pointer;
+                display: block;
+                width: 100%;
+            }
         </style>
     </head>
     <body>
         <main>
             <section class="card" aria-label="Simple quiz frontend placeholder">
-                <h1>Simple Quiz Frontend (Placeholder)</h1>
+                <h1>Simple Quiz Frontend</h1>
                 <p>
-                    Preview is running successfully. This repository currently contains static-analysis scaffolding but no
-                    quiz UI yet.
+                    Preview is running successfully. Below is a minimal static set of quiz questions so the UI renders
+                    real content.
                 </p>
 
+                <section class="quiz" aria-label="Quiz questions">
+                    <h2>Quiz Questions (Sample)</h2>
+
+                    <article class="question" aria-label="Question 1">
+                        <p class="meta">Question 1 of 5 • Multiple choice</p>
+                        <h3>Which HTML element is best for the main page content (excluding headers/footers/nav)?</h3>
+                        <ul class="options">
+                            <li class="option">
+                                <input type="radio" id="q1a" name="q1" />
+                                <label for="q1a">&lt;section&gt;</label>
+                            </li>
+                            <li class="option">
+                                <input type="radio" id="q1b" name="q1" />
+                                <label for="q1b">&lt;main&gt;</label>
+                            </li>
+                            <li class="option">
+                                <input type="radio" id="q1c" name="q1" />
+                                <label for="q1c">&lt;div&gt;</label>
+                            </li>
+                            <li class="option">
+                                <input type="radio" id="q1d" name="q1" />
+                                <label for="q1d">&lt;aside&gt;</label>
+                            </li>
+                        </ul>
+                    </article>
+
+                    <article class="question" aria-label="Question 2">
+                        <p class="meta">Question 2 of 5 • Multiple choice</p>
+                        <h3>In CSS, which unit is relative to the root element’s font size?</h3>
+                        <ul class="options">
+                            <li class="option">
+                                <input type="radio" id="q2a" name="q2" />
+                                <label for="q2a">em</label>
+                            </li>
+                            <li class="option">
+                                <input type="radio" id="q2b" name="q2" />
+                                <label for="q2b">rem</label>
+                            </li>
+                            <li class="option">
+                                <input type="radio" id="q2c" name="q2" />
+                                <label for="q2c">px</label>
+                            </li>
+                            <li class="option">
+                                <input type="radio" id="q2d" name="q2" />
+                                <label for="q2d">vh</label>
+                            </li>
+                        </ul>
+                    </article>
+
+                    <article class="question" aria-label="Question 3">
+                        <p class="meta">Question 3 of 5 • Multiple choice</p>
+                        <h3>Which JavaScript method converts a JSON string into an object?</h3>
+                        <ul class="options">
+                            <li class="option">
+                                <input type="radio" id="q3a" name="q3" />
+                                <label for="q3a">JSON.stringify()</label>
+                            </li>
+                            <li class="option">
+                                <input type="radio" id="q3b" name="q3" />
+                                <label for="q3b">JSON.parse()</label>
+                            </li>
+                            <li class="option">
+                                <input type="radio" id="q3c" name="q3" />
+                                <label for="q3c">Object.fromEntries()</label>
+                            </li>
+                            <li class="option">
+                                <input type="radio" id="q3d" name="q3" />
+                                <label for="q3d">String.toObject()</label>
+                            </li>
+                        </ul>
+                    </article>
+
+                    <article class="question" aria-label="Question 4">
+                        <p class="meta">Question 4 of 5 • Multiple choice</p>
+                        <h3>Which HTTP method is typically used to update an existing resource?</h3>
+                        <ul class="options">
+                            <li class="option">
+                                <input type="radio" id="q4a" name="q4" />
+                                <label for="q4a">GET</label>
+                            </li>
+                            <li class="option">
+                                <input type="radio" id="q4b" name="q4" />
+                                <label for="q4b">POST</label>
+                            </li>
+                            <li class="option">
+                                <input type="radio" id="q4c" name="q4" />
+                                <label for="q4c">PUT</label>
+                            </li>
+                            <li class="option">
+                                <input type="radio" id="q4d" name="q4" />
+                                <label for="q4d">TRACE</label>
+                            </li>
+                        </ul>
+                    </article>
+
+                    <article class="question" aria-label="Question 5">
+                        <p class="meta">Question 5 of 5 • Multiple choice</p>
+                        <h3>Which of these improves accessibility for form controls?</h3>
+                        <ul class="options">
+                            <li class="option">
+                                <input type="radio" id="q5a" name="q5" />
+                                <label for="q5a">Using placeholder text instead of labels</label>
+                            </li>
+                            <li class="option">
+                                <input type="radio" id="q5b" name="q5" />
+                                <label for="q5b">Associating a &lt;label&gt; with an input via <code>for</code>/<code>id</code></label>
+                            </li>
+                            <li class="option">
+                                <input type="radio" id="q5c" name="q5" />
+                                <label for="q5c">Removing focus outlines</label>
+                            </li>
+                            <li class="option">
+                                <input type="radio" id="q5d" name="q5" />
+                                <label for="q5d">Relying only on color to show selection</label>
+                            </li>
+                        </ul>
+                    </article>
+                </section>
+
                 <div class="hint">
-                    <p><strong>Next:</strong> Add your frontend source under <code>quiz_application_frontend/</code> and update the container manifest commands accordingly.</p>
+                    <p>
+                        <strong>Note:</strong> This is intentionally static content (no scoring / submit logic yet) to
+                        satisfy the “preview shows quiz questions” requirement with minimal extra features.
+                    </p>
                 </div>
             </section>
         </main>
