@@ -376,6 +376,7 @@
                 const statusEl = document.getElementById('status');
 
                 // Current on-screen question order (shuffled per page load and on reset).
+                // Each entry is a "view model" with shuffled options while still tracking the correct option.
                 let quizOrder = [];
 
                 function setStatus(message, kind) {
@@ -401,8 +402,16 @@
                 }
 
                 function ensureQuizOrder() {
-                    // Keep the question set identical; only randomize order.
-                    quizOrder = shuffleCopy(quiz);
+                    // Randomize question order AND randomize options within each question.
+                    // IMPORTANT: We keep option IDs stable, but shuffle their display order.
+                    // Correct answer tracking stays valid by carrying forward correctOptionId
+                    // and by using the per-render shuffled options for labeling/highlighting.
+                    quizOrder = shuffleCopy(quiz).map((q) => ({
+                        id: q.id,
+                        prompt: q.prompt,
+                        options: shuffleCopy(q.options),
+                        correctOptionId: q.correctOptionId
+                    }));
                 }
 
                 function renderQuiz() {
@@ -472,6 +481,7 @@
                         if (selected === correct) {
                             score += 1;
                         } else {
+                            // IMPORTANT: Use the per-render shuffled options to get the label (still matches by id).
                             const correctLabel = q.options.find((o) => o.id === correct)?.label ?? 'Unknown';
                             misses.push({
                                 number: index + 1,
@@ -549,7 +559,9 @@
                 }
 
                 function applyGrading(answers) {
-                    quiz.forEach((q) => {
+                    // IMPORTANT: Use quizOrder so we grade against the current rendered set
+                    // (which includes per-question shuffled options).
+                    quizOrder.forEach((q) => {
                         const questionEl = quizRoot.querySelector(`.question[data-question-id="${q.id}"]`);
                         if (!questionEl) return;
 
@@ -628,7 +640,9 @@
                             .join(', ');
 
                         setStatus(
-                            `Please answer all questions before submitting. Missing: Question${validation.unansweredQuestionIds.length === 1 ? '' : 's'} ${questionNumbers}.`,
+                            `Please answer all questions before submitting. Missing: Question${
+                                validation.unansweredQuestionIds.length === 1 ? '' : 's'
+                            } ${questionNumbers}.`,
                             'error'
                         );
 
@@ -640,9 +654,7 @@
                         const firstMissingEl = quizRoot.querySelector(
                             `.question[data-question-id="${firstMissingId}"]`
                         );
-                        const firstMissingInput = quizForm.querySelector(
-                            `input[name="${firstMissingId}"]`
-                        );
+                        const firstMissingInput = quizForm.querySelector(`input[name="${firstMissingId}"]`);
 
                         if (firstMissingEl) {
                             firstMissingEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -661,7 +673,7 @@
                     clearUnansweredHighlights();
                 });
 
-                // Reset button: clear selections + results + status + re-randomize question order.
+                // Reset button: clear selections + results + status + re-randomize question order and per-question options.
                 resetBtn.addEventListener('click', function () {
                     resetQuizUi({ rerandomize: true });
                 });
