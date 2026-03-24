@@ -311,8 +311,7 @@
                             { id: 'a', label: 'Using placeholder text instead of labels' },
                             {
                                 id: 'b',
-                                label:
-                                    'Associating a <label> with an input via for/id'
+                                label: 'Associating a <label> with an input via for/id'
                             },
                             { id: 'c', label: 'Removing focus outlines' },
                             { id: 'd', label: 'Relying only on color to show selection' }
@@ -450,9 +449,17 @@
                     return true;
                 }
 
+                // Reset the UI back to its initial state.
+                function resetQuizUi() {
+                    quizForm.reset();
+                    resultsEl.hidden = true;
+                    resultsEl.innerHTML = '';
+                    setStatus('', null);
+                }
+
                 // Initial render
                 renderQuiz();
-                setStatus('', null);
+                resetQuizUi();
 
                 quizForm.addEventListener('submit', function (e) {
                     e.preventDefault();
@@ -471,11 +478,9 @@
                     setStatus('Submitted! Scroll to see your results.', 'success');
                 });
 
+                // Reset button: clear selections + results + status.
                 resetBtn.addEventListener('click', function () {
-                    quizForm.reset();
-                    resultsEl.hidden = true;
-                    resultsEl.innerHTML = '';
-                    setStatus('Reset complete.', null);
+                    resetQuizUi();
                 });
 
                 // If the user changes an answer after an error, clear the error message.
