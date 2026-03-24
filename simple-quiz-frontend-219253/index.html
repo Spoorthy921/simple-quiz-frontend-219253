@@ -216,6 +216,16 @@
                 white-space: nowrap;
                 border: 0;
             }
+
+            /* Minimal validation styling for unanswered questions. */
+            .question.unanswered {
+                border-color: rgba(255, 107, 107, 0.8);
+                box-shadow: 0 0 0 3px rgba(255, 107, 107, 0.12);
+            }
+
+            .question.unanswered .meta {
+                color: var(--danger);
+            }
         </style>
     </head>
     <body>
@@ -346,6 +356,7 @@
                         const questionEl = document.createElement('article');
                         questionEl.className = 'question';
                         questionEl.setAttribute('aria-label', `Question ${index + 1}`);
+                        questionEl.dataset.questionId = q.id;
 
                         const meta = document.createElement('p');
                         meta.className = 'meta';
@@ -442,11 +453,29 @@
                     resultsEl.innerHTML = headline + details;
                 }
 
+                function clearUnansweredHighlights() {
+                    quizRoot.querySelectorAll('.question.unanswered').forEach((el) => {
+                        el.classList.remove('unanswered');
+                    });
+                }
+
+                function highlightUnansweredQuestions(unansweredQuestionIds) {
+                    unansweredQuestionIds.forEach((questionId) => {
+                        const el = quizRoot.querySelector(`.question[data-question-id="${questionId}"]`);
+                        if (el) el.classList.add('unanswered');
+                    });
+                }
+
                 function validateAllAnswered(answers) {
-                    for (const q of quiz) {
-                        if (!answers.get(q.id)) return false;
-                    }
-                    return true;
+                    const unansweredQuestionIds = [];
+                    quiz.forEach((q) => {
+                        if (!answers.get(q.id)) unansweredQuestionIds.push(q.id);
+                    });
+
+                    return {
+                        isValid: unansweredQuestionIds.length === 0,
+                        unansweredQuestionIds
+                    };
                 }
 
                 // Reset the UI back to its initial state.
@@ -455,6 +484,7 @@
                     resultsEl.hidden = true;
                     resultsEl.innerHTML = '';
                     setStatus('', null);
+                    clearUnansweredHighlights();
                 }
 
                 // Initial render
@@ -465,17 +495,48 @@
                     e.preventDefault();
 
                     const answers = getSelectedAnswers();
+                    const validation = validateAllAnswered(answers);
 
-                    if (!validateAllAnswered(answers)) {
-                        setStatus('Please answer all questions before submitting.', 'error');
+                    if (!validation.isValid) {
+                        clearUnansweredHighlights();
+                        highlightUnansweredQuestions(validation.unansweredQuestionIds);
+
+                        const questionNumbers = validation.unansweredQuestionIds
+                            .map((id) => quiz.findIndex((q) => q.id === id) + 1)
+                            .filter((n) => n > 0)
+                            .join(', ');
+
+                        setStatus(
+                            `Please answer all questions before submitting. Missing: Question${validation.unansweredQuestionIds.length === 1 ? '' : 's'} ${questionNumbers}.`,
+                            'error'
+                        );
+
                         resultsEl.hidden = true;
                         resultsEl.innerHTML = '';
+
+                        // Scroll/focus to the first unanswered question for quick correction.
+                        const firstMissingId = validation.unansweredQuestionIds[0];
+                        const firstMissingEl = quizRoot.querySelector(
+                            `.question[data-question-id="${firstMissingId}"]`
+                        );
+                        const firstMissingInput = quizForm.querySelector(
+                            `input[name="${firstMissingId}"]`
+                        );
+
+                        if (firstMissingEl) {
+                            firstMissingEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        }
+                        if (firstMissingInput) {
+                            firstMissingInput.focus({ preventScroll: true });
+                        }
+
                         return;
                     }
 
                     const result = computeScore(answers);
                     renderResults(result);
                     setStatus('Submitted! Scroll to see your results.', 'success');
+                    clearUnansweredHighlights();
                 });
 
                 // Reset button: clear selections + results + status.
@@ -483,11 +544,12 @@
                     resetQuizUi();
                 });
 
-                // If the user changes an answer after an error, clear the error message.
+                // If the user changes an answer after an error, clear the error message and any highlighting.
                 quizForm.addEventListener('change', function () {
                     if (statusEl.classList.contains('error')) {
                         setStatus('', null);
                     }
+                    clearUnansweredHighlights();
                 });
             })();
         </script>
